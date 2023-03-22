@@ -209,7 +209,7 @@ namespace efanna2e {
             getMergeLevelNodeList(node->Lchild, treeid, deepth);
             getMergeLevelNodeList(node->Rchild, treeid, deepth);
         } else if (deepth == ml) {
-            mlNodeList.push_back(std::make_pair(node, treeid));
+            mlNodeList.emplace_back(node, treeid);
         } else {
             error_flag = true;
             if (deepth < max_deepth)max_deepth = deepth;
@@ -275,7 +275,6 @@ namespace efanna2e {
                             knn_graph[feature_id].push(c1);
                             if (knn_graph[feature_id].size() > K)
                                 knn_graph[feature_id].pop();
-
                         }
                     }
                 }
@@ -330,8 +329,8 @@ namespace efanna2e {
             node->StartIdx = 0;
             node->EndIdx = N;
             node->treeid = i;
-            tree_roots_.push_back(node);
-            ActiveSet.push_back(node);
+            tree_roots_.emplace_back(node);
+            ActiveSet.emplace_back(node);
         }
 
 #pragma omp parallel for
@@ -370,8 +369,8 @@ namespace efanna2e {
                 node->Lchild = nodeL;
                 node->Rchild = nodeR;
                 omp_set_lock(&rootlock);
-                if (mid > K)NewSet.push_back(nodeL);
-                if (nodeR->EndIdx - nodeR->StartIdx > K)NewSet.push_back(nodeR);
+                if (mid > K)NewSet.emplace_back(nodeL);
+                if (nodeR->EndIdx - nodeR->StartIdx > K)NewSet.emplace_back(nodeR);
                 omp_unset_lock(&rootlock);
             }
             ActiveSet.resize(NewSet.size());
@@ -401,7 +400,6 @@ namespace efanna2e {
             std::cout << "merge level deeper than tree, max merge deepth is " << max_deepth - 1 << std::endl;
         }
 
-        std::cout<<"???fuck\n";
 #pragma omp parallel for
         for (size_t i = 0; i < mlNodeList.size(); i++) {
             mergeSubGraphs(mlNodeList[i].second, mlNodeList[i].first);

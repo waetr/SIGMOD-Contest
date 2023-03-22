@@ -8,3 +8,6 @@ target_link_libraries(test_nndescent_refine ${PROJECT_NAME})
 
 add_executable(test_kdtree_graph test_kdtree_graph.cpp)
 target_link_libraries(test_kdtree_graph ${PROJECT_NAME})
+
+add_executable(faiss_train faiss_train.cpp)
+target_link_libraries(faiss_train ${PROJECT_NAME} faiss -lopenblas)

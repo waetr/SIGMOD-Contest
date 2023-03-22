@@ -55,6 +55,8 @@ int main(int argc, char **argv) {
 
     index.RefineGraph(data_load, paras);
 
+
+
     auto e = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = e - s;
     std::cout << "Time cost: " << diff.count() << "\n";

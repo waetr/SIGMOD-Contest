@@ -1,2 +1,4 @@
 cmake-build-debug
 .idea
+extern_libs/faiss/
+rep/
