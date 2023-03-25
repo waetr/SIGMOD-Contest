@@ -33,7 +33,7 @@ namespace efanna2e {
     inline float* data_align(float* data_ori, unsigned point_num, unsigned& dim){
       #ifdef __GNUC__
       #ifdef __AVX__
-        #define DATA_ALIGN_FACTOR 8
+        #define DATA_ALIGN_FACTOR 16
       #else
       #ifdef __SSE2__
         #define DATA_ALIGN_FACTOR 4

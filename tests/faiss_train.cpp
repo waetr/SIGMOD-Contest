@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     auto s_ = std::chrono::high_resolution_clock::now();
 
     const char *index_key = "IVF16384_HNSW16,Flat";
-    const char *search_key = "nprobe=4,quantizer_efSearch=128";
+    const char *search_key = "nprobe=8,quantizer_efSearch=128";
     //"nprobe=2,quantizer_efSearch=32";
 
     float *data_load;
@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
         faiss::idx_t *I = new faiss::idx_t[batch_size * K];
         float *D = new float[batch_size * K];
 
-        efanna2e::IndexRandom init_index(104, points_num);
-        efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, (efanna2e::Index *) (&init_index));
+        efanna2e::IndexRandom init_index(112, points_num);
+        efanna2e::IndexGraph index_graph(112, points_num, efanna2e::L2, (efanna2e::Index *) (&init_index));
 
         index_graph.final_graph_.resize(points_num);
         for (size_t i = 0; i < points_num; i++) {
