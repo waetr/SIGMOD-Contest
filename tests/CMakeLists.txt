@@ -1,13 +1,16 @@
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(test_nndescent test_nndescent.cpp)
-target_link_libraries(test_nndescent ${PROJECT_NAME})
+#add_executable(test_nndescent test_nndescent.cpp)
+#target_link_libraries(test_nndescent ${PROJECT_NAME})
+#
+#add_executable(test_nndescent_refine test_nndescent_refine.cpp)
+#target_link_libraries(test_nndescent_refine ${PROJECT_NAME})
+#
+#add_executable(test_kdtree_graph test_kdtree_graph.cpp)
+#target_link_libraries(test_kdtree_graph ${PROJECT_NAME})
 
-add_executable(test_nndescent_refine test_nndescent_refine.cpp)
-target_link_libraries(test_nndescent_refine ${PROJECT_NAME})
+#add_executable(faiss_train faiss_train.cpp)
+#target_link_libraries(faiss_train ${PROJECT_NAME} faiss -lopenblas)
 
-add_executable(test_kdtree_graph test_kdtree_graph.cpp)
-target_link_libraries(test_kdtree_graph ${PROJECT_NAME})
-
-add_executable(faiss_train faiss_train.cpp)
-target_link_libraries(faiss_train ${PROJECT_NAME} faiss -lopenblas)
+add_executable(test_faiss test_faiss.cpp)
+target_link_libraries(test_faiss ${PROJECT_NAME} faiss -lopenblas)

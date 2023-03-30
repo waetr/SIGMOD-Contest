@@ -1,3 +1,3 @@
-I am using this command to run:
+Please refer to **run.sh** for how to run the code.
 
-    ./tests/faiss_train add tests/dummy-data.bin 10m.index tests/output.bin
+Note that only the dataset with 10M size can execute successfully, since the faiss will return -1 when the size of dataset is small.

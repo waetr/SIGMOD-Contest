@@ -1,4 +1,5 @@
 cmake-build-debug
 .idea
 extern_libs/faiss/
-rep/
+rep/10m.index
+rep/submission.rpz

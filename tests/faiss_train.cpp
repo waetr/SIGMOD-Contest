@@ -98,10 +98,12 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
+    //omp_set_num_threads(64);
+
     auto s_ = std::chrono::high_resolution_clock::now();
 
-    const char *index_key = "IVF16384_HNSW16,Flat";
-    const char *search_key = "nprobe=4,quantizer_efSearch=128";
+    const char *index_key = "IVF32768_HNSW8";
+    const char *search_key = "nprobe=8,quantizer_efSearch=128";
     //"nprobe=2,quantizer_efSearch=32";
 
     float *data_load;
@@ -178,8 +180,8 @@ int main(int argc, char **argv) {
         data_load = efanna2e::data_align(data_load, points_num, dim);//one must align the data before build
         efanna2e::Parameters paras;
         paras.Set<unsigned>("K", K);
-        paras.Set<unsigned>("L", 175);
-        paras.Set<unsigned>("iter", 7);
+        paras.Set<unsigned>("L", 200);
+        paras.Set<unsigned>("iter", 8);
         paras.Set<unsigned>("S", 20);
         paras.Set<unsigned>("R", 300);
 

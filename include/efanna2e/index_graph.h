@@ -50,10 +50,10 @@ namespace efanna2e {
         void RefineGraph(const float *data, const Parameters &parameters);
 
         CompactGraph final_graph_;
+        KNNGraph graph_;
     protected:
 
         Index *initializer_;
-        KNNGraph graph_;
 
 
     private:
