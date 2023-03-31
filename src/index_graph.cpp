@@ -152,9 +152,13 @@ namespace efanna2e {
         std::vector<std::vector<unsigned> > acc_eval_set(_CONTROL_NUM);
         GenRandom(rng, &control_points[0], control_points.size(), nd_);
         generate_control_set(control_points, acc_eval_set, nd_);
-        for (unsigned it = 0; it < iter; it++) {
-            std::cout << "iter: " << it;
+        for (unsigned it = 1; it <= iter; it++) {
+            if (it == 1) {
+                eval_recall(control_points, acc_eval_set);
+                std::cout << "// Initial graph\n";
+            }
 
+            std::cout << "iter: " << it;
             auto s = std::chrono::high_resolution_clock::now();
 
             update(parameters);
@@ -254,9 +258,9 @@ namespace efanna2e {
             auto &ids = final_graph_[i];
             //std::sort(ids.begin(), ids.end());
 
-            size_t K = ids.size();
+            size_t K_ = ids.size();
 
-            for (unsigned j = 0; j < K; j++) {
+            for (unsigned j = 0; j < K_; j++) {
                 unsigned id = ids[j];
                 if (id == i) continue;
                 float dist = distance_->compare(data_ + i * dimension_, data_ + id * dimension_, (unsigned) dimension_);
@@ -290,10 +294,13 @@ namespace efanna2e {
 #pragma omp parallel for
         for (unsigned i = 0; i < nd_; i++) {
             final_graph_[i].reserve(K);
+            final_graph_[i].resize(K);
+
             //std::nth_element(graph_[i].pool.begin(), graph_[i].pool.end(), graph_[i].pool.begin()+K-1);
             std::sort(graph_[i].pool.begin(), graph_[i].pool.end());
+
             for (unsigned j = 0; j < K; j++) {
-                final_graph_[i].emplace_back(graph_[i].pool[j].id);
+                final_graph_[i][j] = graph_[i].pool[j].id;
             }
         }
         std::vector<nhood>().swap(graph_);

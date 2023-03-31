@@ -30,7 +30,10 @@ void load_data(char *filename, float *&data, unsigned &num, unsigned &dim) {// l
 
 const int K = 100;
 const char *index_file = "rep/IVF32768_HNSW32.index";
-const char *search_key = "nprobe=8,quantizer_efSearch=128";
+
+const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
+//const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
+//const char *search_key = "nprobe=16,quantizer_efSearch=256"; // 0.312 recall within 380 secs (bad)
 
 int main(int argc, char **argv) {
     if (argc != 7) {
@@ -41,7 +44,7 @@ int main(int argc, char **argv) {
     const unsigned iter = atoi(argv[4]);
     const unsigned S = atoi(argv[5]);
     const unsigned R = atoi(argv[6]);
-    omp_set_num_threads(64);
+    //omp_set_num_threads(64);
     auto s_ = std::chrono::high_resolution_clock::now();
 
     float *data_load;
@@ -67,8 +70,8 @@ int main(int argc, char **argv) {
 
     // output buffers
     const int batch_size = points_num < 100000 ? points_num : 100000;
-    faiss::idx_t *I = new faiss::idx_t[batch_size * K];
-    float *D = new float[batch_size * K];
+    faiss::idx_t *I = new faiss::idx_t[batch_size * (K + 1)];
+    float *D = new float[batch_size * (K + 1)];
 
     efanna2e::IndexRandom init_index(104, points_num);
     efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, (efanna2e::Index *) (&init_index));
@@ -76,15 +79,16 @@ int main(int argc, char **argv) {
     {
         index_graph.final_graph_.resize(points_num);
         for (size_t i = 0; i < points_num; i++) {
-            index_graph.final_graph_[i].resize(K);
+            index_graph.final_graph_[i].reserve(K + 1);
+            index_graph.final_graph_[i].resize(K + 1);
         }
 
         for (unsigned i = 0; i < points_num / batch_size; i++) {
             auto s = std::chrono::high_resolution_clock::now();
-            index->search(batch_size, data_load + i * batch_size * dim, K, D, I);
+            index->search(batch_size, data_load + i * batch_size * dim, K + 1, D, I);
             for (int j = 0; j < batch_size; j++) {
-                for (int k0 = 0; k0 < K; k0++) {
-                    index_graph.final_graph_[i * batch_size + j][k0] = *(I + j * K + k0);
+                for (int k0 = 0; k0 < K + 1; k0++) {
+                    index_graph.final_graph_[i * batch_size + j][k0] = *(I + j * (K + 1) + k0);
                 }
             }
             auto e = std::chrono::high_resolution_clock::now();
@@ -94,9 +98,12 @@ int main(int argc, char **argv) {
     }
 
     if (points_num == 10000) {
-        index_graph.Save(argv[4]);
+        index_graph.Save(argv[2]);
         return 0;
     }
+
+    delete index;
+    index = nullptr;
 
     data_load = efanna2e::data_align(data_load, points_num, dim);//one must align the data before build
     efanna2e::Parameters paras;
@@ -116,6 +123,29 @@ int main(int argc, char **argv) {
         std::cout << "NN-Descent Time cost: " << diff.count() << "\n";
     }
 
+    { // Just for test, comment it when submit
+        auto s = std::chrono::high_resolution_clock::now();
+
+        int64_t hash_time = 0, max_hash_time = 0;
+        std::vector<bool> hsh(10000);
+        for (int i = 0; i < points_num; i++) {
+            int64_t tmp = 0;
+            for (int j = 0; j < index_graph.final_graph_[i].size(); ++j) {
+                if (hsh[index_graph.final_graph_[i][j] >> 10]) {
+                    hash_time++;
+                    tmp++;
+                } else hsh[index_graph.final_graph_[i][j] >> 10] = true;
+            }
+            max_hash_time = std::max(max_hash_time, tmp);
+            for (int j = 0; j < index_graph.final_graph_[i].size(); ++j) {
+                hsh[index_graph.final_graph_[i][j] >> 10] = false;
+            }
+        }
+        std::cout << "hash time: " << hash_time << " max hash time: " << max_hash_time << "\n";
+        auto e = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = e - s;
+        std::cout << "Hash-test Time cost: " << diff.count() << "\n";
+    }
 
     index_graph.Save(argv[2]);
 
