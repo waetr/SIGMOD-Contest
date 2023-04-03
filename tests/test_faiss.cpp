@@ -1,4 +1,5 @@
 #include <faiss/index_io.h>
+#include <faiss/utils/distances.h>
 #include <faiss/AutoTune.h>
 #include <faiss/index_factory.h>
 #include <efanna2e/util.h>
@@ -31,8 +32,8 @@ void load_data(char *filename, float *&data, unsigned &num, unsigned &dim) {// l
 const int K = 100;
 const char *index_file = "rep/IVF32768_HNSW32.index";
 
-const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
-//const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
+//const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
+const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
 //const char *search_key = "nprobe=16,quantizer_efSearch=256"; // 0.312 recall within 380 secs (bad)
 
 int main(int argc, char **argv) {
@@ -75,6 +76,14 @@ int main(int argc, char **argv) {
 
     efanna2e::IndexRandom init_index(104, points_num);
     efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, (efanna2e::Index *) (&init_index));
+
+//    {
+//        data_load = efanna2e::data_align(data_load, points_num, dim);//one must align the data before build
+//        float dist0 = index_graph.distance_->compare(data_load + 123 * 104, data_load + 456 * 104, 104);
+//        float dist1 = faiss::fvec_L2sqr(data_load + 123 * 104, data_load + 456 * 104, 104);
+//        printf("1: %.3f 2: %.3f\n", dist0, dist1);
+//        exit(-1);
+//    }
 
     {
         index_graph.final_graph_.resize(points_num);
@@ -122,31 +131,6 @@ int main(int argc, char **argv) {
         std::chrono::duration<double> diff = e - s;
         std::cout << "NN-Descent Time cost: " << diff.count() << "\n";
     }
-
-    { // Just for test, comment it when submit
-        auto s = std::chrono::high_resolution_clock::now();
-
-        int64_t hash_time = 0, max_hash_time = 0;
-        std::vector<bool> hsh(10000);
-        for (int i = 0; i < points_num; i++) {
-            int64_t tmp = 0;
-            for (int j = 0; j < index_graph.final_graph_[i].size(); ++j) {
-                if (hsh[index_graph.final_graph_[i][j] >> 10]) {
-                    hash_time++;
-                    tmp++;
-                } else hsh[index_graph.final_graph_[i][j] >> 10] = true;
-            }
-            max_hash_time = std::max(max_hash_time, tmp);
-            for (int j = 0; j < index_graph.final_graph_[i].size(); ++j) {
-                hsh[index_graph.final_graph_[i][j] >> 10] = false;
-            }
-        }
-        std::cout << "hash time: " << hash_time << " max hash time: " << max_hash_time << "\n";
-        auto e = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> diff = e - s;
-        std::cout << "Hash-test Time cost: " << diff.count() << "\n";
-    }
-
     index_graph.Save(argv[2]);
 
     auto e_ = std::chrono::high_resolution_clock::now();

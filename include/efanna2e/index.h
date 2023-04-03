@@ -45,11 +45,11 @@ namespace efanna2e {
         inline const float *GetDataset() const { return data_; }
 
         const float *data_;
+        Distance *distance_;
     protected:
         const size_t dimension_;
         size_t nd_;
         bool has_built;
-        Distance *distance_;
     };
 
 }

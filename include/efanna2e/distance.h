@@ -8,6 +8,7 @@
 #include <x86intrin.h>
 #include <iostream>
 namespace efanna2e{
+
   enum Metric{
     L2 = 0,
     INNER_PRODUCT = 1,
@@ -22,6 +23,7 @@ namespace efanna2e{
 
     class DistanceL2 : public Distance{
     public:
+
         float compare(const float* a, const float* b, unsigned size) const {
             float result = 0;
 

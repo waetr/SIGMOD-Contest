@@ -4,11 +4,14 @@
 // This source code is licensed under the MIT license.
 //
 
+#include <faiss/utils/distances.h>
 #include <efanna2e/index_graph.h>
 #include <efanna2e/exceptions.h>
 #include <efanna2e/parameters.h>
 #include <omp.h>
 #include <set>
+
+int64_t purn_times = 0, tot_times = 0;
 
 namespace efanna2e {
 #define _CONTROL_NUM 100
@@ -27,8 +30,12 @@ namespace efanna2e {
             graph_[n].join([&](unsigned i, unsigned j) {
                 if (i != j) {
                     float dist = distance_->compare(data_ + i * dimension_, data_ + j * dimension_, dimension_);
-                    graph_[i].insert(j, dist);
-                    graph_[j].insert(i, dist);
+                    if (dist <= graph_[i].pool.front().distance) {
+                        graph_[i].insert(j, dist);
+                    }
+                    if (dist <= graph_[j].pool.front().distance) {
+                        graph_[j].insert(i, dist);
+                    }
                 }
             });
         }
@@ -260,13 +267,12 @@ namespace efanna2e {
 
             size_t K_ = ids.size();
 
-            for (unsigned j = 0; j < K_; j++) {
+            for (int j = K_ - 1; j >= 0; j--) {
                 unsigned id = ids[j];
                 if (id == i) continue;
                 float dist = distance_->compare(data_ + i * dimension_, data_ + id * dimension_, (unsigned) dimension_);
                 graph_[i].pool.emplace_back(id, dist, true);
             }
-            std::make_heap(graph_[i].pool.begin(), graph_[i].pool.end());
             graph_[i].pool.reserve(L);
             std::vector<unsigned>().swap(ids);
         }
