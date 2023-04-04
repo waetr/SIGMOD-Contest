@@ -101,16 +101,6 @@ int main(int argc, char **argv) {
         std::cout << "Search time: " << search_time << "\n";
     }
 
-    for (unsigned n = 0; n < points_num; n++) {
-        for (unsigned j = 0; j < index_graph.final_graph_[n].size(); j++) {
-            if(index_graph.final_graph_[n][j] == n) {
-                std::swap(index_graph.final_graph_[n][j], *(index_graph.final_graph_[n].end()-1));
-                break;
-            }
-        }
-        index_graph.final_graph_[n].resize(K);
-    }
-
     if (points_num == 10000) {
         index_graph.Save(argv[2]);
         return 0;
