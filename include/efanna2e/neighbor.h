@@ -64,14 +64,13 @@ namespace efanna2e {
         }
 
         void insert(unsigned id, float dist) {
-            LockGuard guard(lock);
-            //if (dist > pool.front().distance) return;
             auto it = std::find_if(pool.begin(), pool.end(), [id](Neighbor const &obj) {
                 return obj.id == id;
             });
             if (it != pool.end()) return;
+            LockGuard guard(lock);
             if (pool.size() < pool.capacity()) {
-                pool.push_back(Neighbor(id, dist, true));
+                pool.emplace_back(id, dist, true);
                 std::push_heap(pool.begin(), pool.end());
             } else {
                 std::pop_heap(pool.begin(), pool.end());
@@ -88,7 +87,7 @@ namespace efanna2e {
                         callback(i, j);
                     }
                 }
-                for (unsigned j: nn_old) {
+                for (unsigned const j: nn_old) {
                     callback(i, j);
                 }
             }

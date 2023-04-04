@@ -14,3 +14,6 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_executable(test_faiss test_faiss.cpp)
 target_link_libraries(test_faiss ${PROJECT_NAME} faiss -lopenblas)
+
+add_executable(heap_test heap_test.cpp)
+target_link_libraries(heap_test ${PROJECT_NAME} faiss -lopenblas)

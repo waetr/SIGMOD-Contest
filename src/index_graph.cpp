@@ -29,6 +29,7 @@ namespace efanna2e {
         for (unsigned n = 0; n < nd_; n++) {
             graph_[n].join([&](unsigned i, unsigned j) {
                 if (i != j) {
+                    //float dist = faiss::fvec_L2sqr(data_ + i * dimension_, data_ + j * dimension_, dimension_);
                     float dist = distance_->compare(data_ + i * dimension_, data_ + j * dimension_, dimension_);
                     if (dist <= graph_[i].pool.front().distance) {
                         graph_[i].insert(j, dist);
@@ -66,8 +67,6 @@ namespace efanna2e {
             unsigned maxl = std::min(nn.M + S, (unsigned) nn.pool.size());
             unsigned c = 0;
             unsigned l = 0;
-            //std::sort(nn.pool.begin(), nn.pool.end());
-            //if(n==0)std::cout << nn.pool[0].distance<<","<< nn.pool[1].distance<<","<< nn.pool[2].distance<< std::endl;
             while ((l < maxl) && (c < S)) {
                 if (nn.pool[l].flag) ++c;
                 ++l;
@@ -127,28 +126,27 @@ namespace efanna2e {
         // Step 4.
         // Combine the forward and the reverse links
         // R = 0 means no reverse links are used.
-#pragma omp parallel for
-        for (unsigned i = 0; i < nd_; ++i) {
-            auto &nn_new = graph_[i].nn_new;
-            auto &nn_old = graph_[i].nn_old;
-            auto &rnn_new = graph_[i].rnn_new;
-            auto &rnn_old = graph_[i].rnn_old;
-//            if (R && rnn_new.size() > R) {
-//                std::random_shuffle(rnn_new.begin(), rnn_new.end());
-//                rnn_new.resize(R);
-//            }
-            nn_new.insert(nn_new.end(), rnn_new.begin(), rnn_new.end());
-//            if (R && rnn_old.size() > R) {
-//                std::random_shuffle(rnn_old.begin(), rnn_old.end());
-//                rnn_old.resize(R);
-//            }
-            nn_old.insert(nn_old.end(), rnn_old.begin(), rnn_old.end());
-            if (nn_old.size() > R * 2) {
-                nn_old.resize(R * 2);
-                nn_old.reserve(R * 2);
+#pragma omp parallel
+        {
+            std::minstd_rand rng(2023 * 7741 + omp_get_thread_num());
+#pragma omp for
+            for (unsigned i = 0; i < nd_; ++i) {
+                auto &nn_new = graph_[i].nn_new;
+                auto &nn_old = graph_[i].nn_old;
+                auto &rnn_new = graph_[i].rnn_new;
+                auto &rnn_old = graph_[i].rnn_old;
+
+                nn_new.insert(nn_new.end(), rnn_new.begin(), rnn_new.end());
+
+                nn_old.insert(nn_old.end(), rnn_old.begin(), rnn_old.end());
+                if (nn_old.size() > R) {
+                    std::shuffle(nn_old.begin(), nn_old.end(), rng);
+                    nn_old.resize(R);
+                    nn_old.reserve(R);
+                }
+                std::vector<unsigned>().swap(graph_[i].rnn_new);
+                std::vector<unsigned>().swap(graph_[i].rnn_old);
             }
-            std::vector<unsigned>().swap(graph_[i].rnn_new);
-            std::vector<unsigned>().swap(graph_[i].rnn_old);
         }
     }
 
@@ -193,6 +191,7 @@ namespace efanna2e {
         for (unsigned i = 0; i < c.size(); i++) {
             std::vector<Neighbor> tmp;
             for (unsigned j = 0; j < N; j++) {
+                //float dist = faiss::fvec_L2sqr(data_ + c[i] * dimension_, data_ + j * dimension_, dimension_);
                 float dist = distance_->compare(data_ + c[i] * dimension_, data_ + j * dimension_, dimension_);
                 tmp.push_back(Neighbor(j, dist, true));
             }
@@ -270,6 +269,7 @@ namespace efanna2e {
             for (int j = K_ - 1; j >= 0; j--) {
                 unsigned id = ids[j];
                 if (id == i) continue;
+                //float dist = faiss::fvec_L2sqr(data_ + i * dimension_, data_ + id * dimension_, (size_t) dimension_);
                 float dist = distance_->compare(data_ + i * dimension_, data_ + id * dimension_, (unsigned) dimension_);
                 graph_[i].pool.emplace_back(id, dist, true);
             }
