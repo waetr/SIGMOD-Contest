@@ -19,7 +19,7 @@ Then the program will generate *knng.bin* in the *rep/* path.
 
 After that, run with the following command:
 
-    ./tests/test_nndescent_refine ../data_SIGMOD/contest-data-release-10m.bin knng.bin output.bin 100 200 7 20 320
+    ./tests/test_nndescent_refine ../data_SIGMOD/contest-data-release-10m.bin rep/git knng.bin output.bin 100 200 7 20 320
 
 Meanings of these commands:
 
