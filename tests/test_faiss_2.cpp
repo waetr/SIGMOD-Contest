@@ -37,16 +37,10 @@ const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall wit
 //const char *search_key = "nprobe=32,quantizer_efSearch=128"; // 0.312 recall within 380 secs (bad)
 
 int main(int argc, char **argv) {
-    if (argc != 7) {
-        std::cout << argc << argv[0] << "data_file saving_graph L iter S R" << std::endl;
+    if (argc != 3) {
+        std::cout << argc << argv[0] << "data_file saving_graph" << std::endl;
         exit(-1);
     }
-    const unsigned L = atoi(argv[3]);
-    const unsigned iter = atoi(argv[4]);
-    const unsigned S = atoi(argv[5]);
-    const unsigned R = atoi(argv[6]);
-    //omp_set_num_threads(64);
-    auto s_ = std::chrono::high_resolution_clock::now();
 
     float *data_load;
     unsigned points_num, dim;
@@ -103,44 +97,14 @@ int main(int argc, char **argv) {
 
     for (unsigned n = 0; n < points_num; n++) {
         for (unsigned j = 0; j < index_graph.final_graph_[n].size(); j++) {
-            if(index_graph.final_graph_[n][j] == n) {
-                std::swap(index_graph.final_graph_[n][j], *(index_graph.final_graph_[n].end()-1));
+            if (index_graph.final_graph_[n][j] == n) {
+                std::swap(index_graph.final_graph_[n][j], *(index_graph.final_graph_[n].end() - 1));
                 break;
             }
         }
         index_graph.final_graph_[n].resize(K);
     }
 
-    if (points_num == 10000) {
-        index_graph.Save(argv[2]);
-        return 0;
-    }
-
-    delete index;
-    index = nullptr;
-
-    data_load = efanna2e::data_align(data_load, points_num, dim);//one must align the data before build
-    efanna2e::Parameters paras;
-    paras.Set<unsigned>("K", K);
-    paras.Set<unsigned>("L", L);
-    paras.Set<unsigned>("iter", iter);
-    paras.Set<unsigned>("S", S);
-    paras.Set<unsigned>("R", R);
-
-    {
-        auto s = std::chrono::high_resolution_clock::now();
-
-        index_graph.RefineGraph(data_load, paras);
-
-        auto e = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> diff = e - s;
-        std::cout << "NN-Descent Time cost: " << diff.count() << "\n";
-    }
     index_graph.Save(argv[2]);
-
-    auto e_ = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff_ = e_ - s_;
-    std::cout << "Total time: " << diff_.count() << std::endl;
-
     return 0;
 }
