@@ -3,7 +3,6 @@
 //
 
 #include <efanna2e/index_graph.h>
-#include <efanna2e/index_random.h>
 #include <efanna2e/util.h>
 
 
@@ -40,8 +39,7 @@ int main(int argc, char **argv) {
     unsigned S = (unsigned) atoi(argv[7]);
     unsigned R = (unsigned) atoi(argv[8]);
     data_load = efanna2e::data_align(data_load, points_num, dim);//one must align the data before build
-    efanna2e::IndexRandom init_index(dim, points_num);
-    efanna2e::IndexGraph index(dim, points_num, efanna2e::L2, (efanna2e::Index *) (&init_index));
+    efanna2e::IndexGraph index(dim, points_num, efanna2e::L2);
 
     index.Load(init_graph_filename);
     efanna2e::Parameters paras;

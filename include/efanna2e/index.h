@@ -23,15 +23,6 @@ namespace efanna2e {
 
         virtual ~Index();
 
-        virtual void Build(size_t n, const float *data, const Parameters &parameters) = 0;
-
-        virtual void Search(
-                const float *query,
-                const float *x,
-                size_t k,
-                const Parameters &parameters,
-                unsigned *indices) = 0;
-
         virtual void Save(const char *filename) = 0;
 
         virtual void Load(const char *filename) = 0;

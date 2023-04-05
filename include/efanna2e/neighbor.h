@@ -63,7 +63,7 @@ namespace efanna2e {
             pool.reserve(l);
         }
 
-        void insert(unsigned id, float dist) {
+        inline void insert(unsigned id, float dist) {
             auto it = std::find_if(pool.begin(), pool.end(), [id](Neighbor const &obj) {
                 return obj.id == id;
             });

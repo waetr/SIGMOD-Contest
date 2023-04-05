@@ -26,7 +26,7 @@ namespace efanna2e {
         typedef std::vector<std::vector<unsigned> > CompactGraph;
         typedef std::vector<LockNeighbor> LockGraph;
 
-        explicit IndexGraph(const size_t dimension, const size_t n, Metric m, Index *initializer);
+        explicit IndexGraph(const size_t dimension, const size_t n, Metric m);
 
 
         virtual ~IndexGraph();
@@ -35,30 +35,13 @@ namespace efanna2e {
 
         virtual void Load(const char *filename) override;
 
-
-        virtual void Build(size_t n, const float *data, const Parameters &parameters) override;
-
-        virtual void Search(
-                const float *query,
-                const float *x,
-                size_t k,
-                const Parameters &parameters,
-                unsigned *indices) override;
-
-        void GraphAdd(const float *data, unsigned n, unsigned dim, const Parameters &parameters);
-
         void RefineGraph(const float *data, const Parameters &parameters);
 
         CompactGraph final_graph_;
         KNNGraph graph_;
-    protected:
-
-        Index *initializer_;
 
 
     private:
-        void InitializeGraph(const Parameters &parameters);
-
         void InitializeGraph_Refine(const Parameters &parameters);
 
         void NNDescent(const Parameters &parameters);
@@ -72,13 +55,6 @@ namespace efanna2e {
                                   unsigned N);
 
         void eval_recall(std::vector<unsigned> &ctrl_points, std::vector<std::vector<unsigned> > &acc_eval_set);
-
-        void get_neighbor_to_add(const float *point, const Parameters &parameters, LockGraph &g,
-                                 std::mt19937 &rng, std::vector<Neighbor> &retset, unsigned n_total);
-
-        void compact_to_Lockgraph(LockGraph &g);
-
-        void parallel_graph_insert(unsigned id, Neighbor nn, LockGraph &g, size_t K);
 
     };
 

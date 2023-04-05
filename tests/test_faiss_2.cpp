@@ -10,7 +10,6 @@
 #include <chrono>
 #include <cassert>
 #include <efanna2e/index_graph.h>
-#include <efanna2e/index_random.h>
 
 void load_data(char *filename, float *&data, unsigned &num, unsigned &dim) {// load data with sift10K pattern
     std::ifstream in(filename, std::ios::binary);
@@ -68,8 +67,7 @@ int main(int argc, char **argv) {
     faiss::idx_t *I = new faiss::idx_t[batch_size * (K + 1)];
     float *D = new float[batch_size * (K + 1)];
 
-    efanna2e::IndexRandom init_index(104, points_num);
-    efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, (efanna2e::Index *) (&init_index));
+    efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2);
 
     {
         double search_time = 0;
