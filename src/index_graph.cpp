@@ -196,6 +196,7 @@ namespace efanna2e {
         std::vector<std::vector<unsigned> > acc_eval_set(_CONTROL_NUM);
         GenRandom(rng, &control_points[0], control_points.size(), nd_);
         generate_control_set(control_points, acc_eval_set, nd_);
+        double tot_time = 0;
         for (unsigned it = 1; it <= iter; it++) {
             if (it == 1) {
                 eval_recall(control_points, acc_eval_set);
@@ -209,7 +210,8 @@ namespace efanna2e {
 
             auto e = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> diff = e - s;
-            std::cout << " update time: " << diff.count() << " ";
+            std::cout << " update: " << diff.count() << "|";
+            tot_time += diff.count();
 
             s = std::chrono::high_resolution_clock::now();
 
@@ -217,7 +219,9 @@ namespace efanna2e {
 
             e = std::chrono::high_resolution_clock::now();
             diff = e - s;
-            std::cout << " join time: " << diff.count() << " ";
+            std::cout << "join: " << diff.count() << " ";
+            tot_time += diff.count();
+            std::cout << "Total time: " << tot_time << " ";
 
             eval_recall(control_points, acc_eval_set);
 
