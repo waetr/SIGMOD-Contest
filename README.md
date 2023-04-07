@@ -5,7 +5,7 @@ Before run, make it:
 
 If you want to run the whole algorithm:
 
-    ./test/test_faiss ../data_SIGMOD/contest-data-release-10m.bin output.bin 200 7 20 320
+    ./tests/test_faiss ../data_SIGMOD/contest-data-release-10m.bin output.bin 200 7 20 320
 
 Note that only the dataset with 10M size can execute successfully, since the faiss will return -1 when the size of dataset is small.
 

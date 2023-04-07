@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     faiss::idx_t *I = new faiss::idx_t[batch_size * (K + 1)];
     float *D = new float[batch_size * (K + 1)];
 
-    efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2);
+    efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, 100);
 
     {
         double search_time = 0;

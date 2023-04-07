@@ -33,7 +33,6 @@ namespace efanna2e {
 
     struct nhood {
         std::mutex lock;
-        std::vector<Neighbor> pool;
         unsigned M;
 
         std::vector<unsigned> nn_old;
@@ -48,35 +47,16 @@ namespace efanna2e {
             nn_new.resize(s * 2);
             GenRandom(rng, &nn_new[0], (unsigned) nn_new.size(), N);
             nn_new.reserve(s * 2);
-            pool.reserve(l);
         }
 
         nhood(const nhood &other) {
             M = other.M;
             std::copy(other.nn_new.begin(), other.nn_new.end(), std::back_inserter(nn_new));
             nn_new.reserve(other.nn_new.capacity());
-            pool.reserve(other.pool.capacity());
         }
 
         void init(unsigned l, unsigned s) {
             M = s;
-            pool.reserve(l);
-        }
-
-        inline void insert(unsigned id, float dist) {
-            auto it = std::find_if(pool.begin(), pool.end(), [id](Neighbor const &obj) {
-                return obj.id == id;
-            });
-            if (it != pool.end()) return;
-            LockGuard guard(lock);
-            if (pool.size() < pool.capacity()) {
-                pool.emplace_back(id, dist, true);
-                std::push_heap(pool.begin(), pool.end());
-            } else {
-                std::pop_heap(pool.begin(), pool.end());
-                pool[pool.size() - 1] = Neighbor(id, dist, true);
-                std::push_heap(pool.begin(), pool.end());
-            }
         }
 
         template<typename C>
@@ -93,41 +73,6 @@ namespace efanna2e {
             }
         }
     };
-
-    struct LockNeighbor {
-        std::mutex lock;
-        std::vector<Neighbor> pool;
-    };
-
-    static inline int InsertIntoPool(Neighbor *addr, unsigned K, Neighbor nn) {
-        // find the location to insert
-        int left = 0, right = K - 1;
-        if (addr[left].distance > nn.distance) {
-            memmove((char *) &addr[left + 1], &addr[left], K * sizeof(Neighbor));
-            addr[left] = nn;
-            return left;
-        }
-        if (addr[right].distance < nn.distance) {
-            addr[K] = nn;
-            return K;
-        }
-        while (left < right - 1) {
-            int mid = (left + right) / 2;
-            if (addr[mid].distance > nn.distance)right = mid;
-            else left = mid;
-        }
-        //check equal ID
-
-        while (left > 0) {
-            if (addr[left].distance < nn.distance) break;
-            if (addr[left].id == nn.id) return K + 1;
-            left--;
-        }
-        if (addr[left].id == nn.id || addr[right].id == nn.id)return K + 1;
-        memmove((char *) &addr[right + 1], &addr[right], (K - right) * sizeof(Neighbor));
-        addr[right] = nn;
-        return right;
-    }
 
 }
 

@@ -16,6 +16,8 @@
 #include "parameters.h"
 #include "neighbor.h"
 #include "index.h"
+#include <faiss/utils/Heap.h>
+
 
 
 namespace efanna2e {
@@ -24,9 +26,8 @@ namespace efanna2e {
     public:
         typedef std::vector<nhood> KNNGraph;
         typedef std::vector<std::vector<unsigned> > CompactGraph;
-        typedef std::vector<LockNeighbor> LockGraph;
 
-        explicit IndexGraph(const size_t dimension, const size_t n, Metric m);
+        explicit IndexGraph(const size_t dimension, const size_t n, Metric m, const size_t l);
 
 
         virtual ~IndexGraph();
@@ -40,8 +41,15 @@ namespace efanna2e {
         CompactGraph final_graph_;
         KNNGraph graph_;
 
+        faiss::HeapArray<faiss::CMax<float, std::pair<unsigned, bool>>> *pool;
+
 
     private:
+        size_t pool_capacity;
+
+        void heap_insert(size_t n, unsigned id, float dist,
+                                      std::mutex &m);
+
         void InitializeGraph_Refine(const Parameters &parameters);
 
         void NNDescent(const Parameters &parameters);

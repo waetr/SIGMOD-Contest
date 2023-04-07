@@ -69,11 +69,11 @@ int main(int argc, char **argv) {
     params.set_index_parameters(index, search_key);
 
     // output buffers
-    const int batch_size = points_num < 1000000 ? points_num : 1000000;
+    const int batch_size = points_num < 100000 ? points_num : 100000;
     faiss::idx_t *I = new faiss::idx_t[batch_size * (K + 1)];
     float *D = new float[batch_size * (K + 1)];
 
-    efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2);
+    efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, L);
 
     {
         double search_time = 0;
