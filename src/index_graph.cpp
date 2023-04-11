@@ -16,12 +16,13 @@ namespace efanna2e {
 
     IndexGraph::IndexGraph(const size_t dimension, const size_t n, Metric m, const size_t l)
             : Index(dimension, n, m) {
-        pool_capacity = l;
+        pool_capacity = 100;
         pool = new faiss::HeapArray<faiss::CMax<float, std::pair<unsigned, bool>>>[n];
         for (size_t i = 0; i < n; i++) {
             pool[i].val = new float[l];
             pool[i].ids = new std::pair<unsigned, bool>[l];
             pool[i].k = 0;
+            pool[i].nh = 100;
         }
     }
 
@@ -38,10 +39,12 @@ namespace efanna2e {
                                  std::mutex &m) {
 
         faiss::HeapArray<faiss::CMax<float, std::pair<unsigned, bool>>> &pool_ = pool[n];
-
-            for (int i = 0; i < pool_.k; i++) {
-                if (pool_.ids[i].first == id) return;
-            }
+        for (int i = 100; i < pool_.nh; i++) {
+            if (pool_.ids[i].first == id) return;
+        }
+        for (int i = 0; i < pool_.k; i++) {
+            if (pool_.ids[i].first == id) return;
+        }
         LockGuard guard(m);
         if (pool_.k < pool_capacity) {
             pool_.k += 1;
@@ -84,12 +87,12 @@ namespace efanna2e {
             std::vector<unsigned>().swap(graph_[i].nn_old);
         }
 
-        int64_t cnt = 0;
+        int64_t cnt_l = 0, cnt_c = 0;
         // Step 2.
         // Compute the number of neighbors which is new i.e. flag is true
         // in the candidate pool. This must not exceed the sample number S.
         // That means We only select S new neighbors.
-#pragma omp parallel for reduction(+:cnt)
+#pragma omp parallel for reduction(+:cnt_l), reduction(+:cnt_c)
         for (unsigned n = 0; n < nd_; ++n) {
             faiss::heap_reorder<faiss::CMax<float, std::pair<unsigned, bool>>>
                     (pool[n].k, pool[n].val, pool[n].ids);
@@ -102,7 +105,8 @@ namespace efanna2e {
                 ++l;
             }
             nn.M = l;
-            cnt += l;
+            cnt_l += l;
+            cnt_c += c;
         }
 
         // Step 3.
@@ -151,9 +155,37 @@ namespace efanna2e {
                         }
                     }
                 }
+
+                for (unsigned l = 100; l < pool[n].nh; ++l) {
+                    auto &nn_distance = pool[n].val[l];
+                    auto &nn_ids = pool[n].ids[l];
+                    auto &nhood_o = graph_[nn_ids.first];  // nn on the other side of the edge
+                    assert(nn_ids.second == false);
+                    nn_old.push_back(nn_ids.first);
+                    // push itself into other.rnn_old if it is not in
+                    // the candidate pool of the other side
+                    if (nn_distance > pool[nn_ids.first].val[pool[nn_ids.first].k - 1]) {
+                        LockGuard guard(nhood_o.lock);
+                        if (nhood_o.rnn_old.size() < R)nhood_o.rnn_old.push_back(n);
+                        else {
+                            unsigned int pos = rng() % R;
+                            nhood_o.rnn_old[pos] = n;
+                        }
+                    }
+                }
                 // make heap to join later (in join() function)
-//                std::reverse(pool[n].val, pool[n].val + pool[n].k);
-//                std::reverse(pool[n].ids, pool[n].ids + pool[n].k);
+                if (pool[n].nh < L) {
+                    for (unsigned l = 0; l < nnhd.M; ++l) {
+                        assert(!pool[n].ids[l].second);
+                        pool[n].val[pool[n].nh] = pool[n].val[l];
+                        pool[n].ids[pool[n].nh] = pool[n].ids[l];
+                        pool[n].nh++;
+                        pool[n].val[l] = pool[n].val[pool[n].k - 1];
+                        pool[n].ids[l] = pool[n].ids[pool[n].k - 1];
+                        pool[n].k--;
+                        if (pool[n].nh >= L || l >= pool[n].k) break;
+                    }
+                }
 
                 faiss::heap_heapify<faiss::CMax<float, std::pair<unsigned, bool>>>(pool[n].k, pool[n].val, pool[n].ids,
                                                                                    pool[n].val, pool[n].ids, pool[n].k);
@@ -186,7 +218,7 @@ namespace efanna2e {
             }
         }
 
-        printf(" l: %.3f\n", 1.0*cnt/nd_);
+        printf(" l: %.3f c: %.3f\n", 1.0 * cnt_l / nd_, 1.0 * cnt_c / nd_);
     }
 
     void IndexGraph::NNDescent(const Parameters &parameters) {
@@ -222,7 +254,6 @@ namespace efanna2e {
             std::cout << "join: " << diff.count() << " ";
             tot_time += diff.count();
             std::cout << "Total time: " << tot_time << " ";
-
             eval_recall(control_points, acc_eval_set);
 
         }
@@ -254,6 +285,14 @@ namespace efanna2e {
             auto &g = pool[ctrl_points[i]];
             auto &v = acc_eval_set[i];
             for (unsigned j = 0; j < g.k; j++) {
+                for (unsigned k = 0; k < v.size(); k++) {
+                    if (g.ids[j].first == v[k]) {
+                        acc++;
+                        break;
+                    }
+                }
+            }
+            for (unsigned j = 100; j < g.nh; j++) {
                 for (unsigned k = 0; k < v.size(); k++) {
                     if (g.ids[j].first == v[k]) {
                         acc++;
@@ -318,7 +357,10 @@ namespace efanna2e {
         for (unsigned i = 0; i < nd_; i++) {
             final_graph_[i].reserve(K);
             final_graph_[i].resize(K);
-
+            assert(pool[i].k == pool_capacity-1);
+            pool[i].k = pool[i].nh;
+            faiss::heap_heapify<faiss::CMax<float, std::pair<unsigned, bool>>>(pool[i].k, pool[i].val, pool[i].ids,
+                                                                               pool[i].val, pool[i].ids, pool[i].k);
             faiss::heap_reorder<faiss::CMax<float, std::pair<unsigned, bool>>>(pool[i].k, pool[i].val, pool[i].ids);
 
             for (unsigned j = 0; j < K; j++) {
