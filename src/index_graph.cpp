@@ -357,8 +357,11 @@ namespace efanna2e {
         for (unsigned i = 0; i < nd_; i++) {
             final_graph_[i].reserve(K);
             final_graph_[i].resize(K);
-            assert(pool[i].k == pool_capacity-1);
-            pool[i].k = pool[i].nh;
+            for (int j = 100; j < pool[i].nh; j++) {
+                pool[i].val[pool[i].k] = pool[i].val[j];
+                pool[i].ids[pool[i].k] = pool[i].ids[j];
+                pool[i].k++;
+            }
             faiss::heap_heapify<faiss::CMax<float, std::pair<unsigned, bool>>>(pool[i].k, pool[i].val, pool[i].ids,
                                                                                pool[i].val, pool[i].ids, pool[i].k);
             faiss::heap_reorder<faiss::CMax<float, std::pair<unsigned, bool>>>(pool[i].k, pool[i].val, pool[i].ids);
