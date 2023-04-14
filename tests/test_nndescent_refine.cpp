@@ -4,6 +4,7 @@
 
 #include <efanna2e/index_graph.h>
 #include <efanna2e/util.h>
+#include <omp.h>
 
 
 void load_data(char *filename, float *&data, unsigned &num, unsigned &dim) {// load data with sift10K pattern
@@ -28,6 +29,7 @@ int main(int argc, char **argv) {
         std::cout << argv[0] << " data_file init_graph save_graph K L iter S R" << std::endl;
         exit(-1);
     }
+    omp_set_num_threads(64);
     float *data_load = NULL;
     unsigned points_num, dim;
     load_data(argv[1], data_load, points_num, dim);

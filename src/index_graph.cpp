@@ -65,10 +65,10 @@ namespace efanna2e {
                 if (i != j) {
                     float dist = distance_->compare(data_ + i * dimension_, data_ + j * dimension_, dimension_);
                     if (dist <= pool[i].val[0]) {
-                        heap_insert(i, j, dist, graph_[n].lock);
+                        heap_insert(i, j, dist, graph_[i].lock);
                     }
                     if (dist <= pool[j].val[0]) {
-                        heap_insert(j, i, dist, graph_[n].lock);
+                        heap_insert(j, i, dist, graph_[j].lock);
                     }
                 }
             });
@@ -100,9 +100,13 @@ namespace efanna2e {
             unsigned maxl = std::min(nn.M + S, (unsigned) pool[n].k);
             unsigned c = 0;
             unsigned l = 0;
-            while ((l < maxl) && (c < S)) {
-                if (pool[n].ids[l].second) ++c;
-                ++l;
+            if (pool[n].nh < L) {
+                l = std::min(maxl, S);
+            } else {
+                while ((l < maxl) && (c < S)) {
+                    if (pool[n].ids[l].second) ++c;
+                    ++l;
+                }
             }
             nn.M = l;
             cnt_l += l;
@@ -223,7 +227,7 @@ namespace efanna2e {
 
     void IndexGraph::NNDescent(const Parameters &parameters) {
         unsigned iter = parameters.Get<unsigned>("iter");
-        std::mt19937 rng(rand());
+        std::mt19937 rng(2023 * 7741);
         std::vector<unsigned> control_points(_CONTROL_NUM);
         std::vector<std::vector<unsigned> > acc_eval_set(_CONTROL_NUM);
         GenRandom(rng, &control_points[0], control_points.size(), nd_);
