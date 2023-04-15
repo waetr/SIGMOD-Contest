@@ -31,8 +31,8 @@ void load_data(char *filename, float *&data, unsigned &num, unsigned &dim) {// l
 const int K = 100;
 const char *index_file = "rep/IVF32768_HNSW32.index";
 
-//const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
-const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
+const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
+//const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
 //const char *search_key = "nprobe=32,quantizer_efSearch=128"; // 0.312 recall within 380 secs (bad)
 
 int main(int argc, char **argv) {
@@ -63,9 +63,10 @@ int main(int argc, char **argv) {
     params.set_index_parameters(index, search_key);
 
     // output buffers
-    const int batch_size = points_num < 1000000 ? points_num : 1000000;
-    faiss::idx_t *I = new faiss::idx_t[batch_size * (K + 1)];
-    float *D = new float[batch_size * (K + 1)];
+    const int batch_size = points_num < 100000 ? points_num : 100000;
+    const int k_ = K+1;
+    faiss::idx_t *I = new faiss::idx_t[batch_size * k_];
+    float *D = new float[batch_size * k_];
 
     efanna2e::IndexGraph index_graph(104, points_num, efanna2e::L2, 100);
 
@@ -73,16 +74,16 @@ int main(int argc, char **argv) {
         double search_time = 0;
         index_graph.final_graph_.resize(points_num);
         for (size_t i = 0; i < points_num; i++) {
-            index_graph.final_graph_[i].reserve(K + 1);
-            index_graph.final_graph_[i].resize(K + 1);
+            index_graph.final_graph_[i].reserve(k_);
+            index_graph.final_graph_[i].resize(k_);
         }
 
         for (unsigned i = 0; i < points_num / batch_size; i++) {
             auto s = std::chrono::high_resolution_clock::now();
-            index->search(batch_size, data_load + i * batch_size * dim, K + 1, D, I);
+            index->search(batch_size, data_load + i * batch_size * dim, k_, D, I);
             for (int j = 0; j < batch_size; j++) {
-                for (int k0 = 0; k0 < K + 1; k0++) {
-                    index_graph.final_graph_[i * batch_size + j][k0] = *(I + j * (K + 1) + k0);
+                for (int k0 = 0; k0 < k_; k0++) {
+                    index_graph.final_graph_[i * batch_size + j][k0] = *(I + j * k_ + k0);
                 }
             }
             auto e = std::chrono::high_resolution_clock::now();
