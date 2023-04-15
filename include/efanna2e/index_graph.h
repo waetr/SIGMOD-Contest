@@ -47,8 +47,7 @@ namespace efanna2e {
     private:
         size_t pool_capacity;
 
-        void heap_insert(size_t n, unsigned id, float dist,
-                                      std::mutex &m);
+        void heap_insert(faiss::HeapArray<faiss::CMax<float, std::pair<unsigned, bool>>> &pool_, unsigned id, float dist) const;
 
         void InitializeGraph_Refine(const Parameters &parameters);
 
@@ -56,7 +55,7 @@ namespace efanna2e {
 
         void join();
 
-        void update(const Parameters &parameters);
+        void update(const Parameters &parameters, int flag);
 
         void generate_control_set(std::vector<unsigned> &c,
                                   std::vector<std::vector<unsigned> > &v,

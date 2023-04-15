@@ -31,8 +31,8 @@ void load_data(char *filename, float *&data, unsigned &num, unsigned &dim) {// l
 const int K = 100;
 const char *index_file = "rep/IVF32768_HNSW32.index";
 
-const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
-//const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
+//const char *search_key = "nprobe=8,quantizer_efSearch=128"; // 0.235 recall within 200 secs
+const char *search_key = "nprobe=16,quantizer_efSearch=128"; // 0.307 recall within 270 secs
 //const char *search_key = "nprobe=32,quantizer_efSearch=128"; // 0.312 recall within 380 secs (bad)
 
 int main(int argc, char **argv) {

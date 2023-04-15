@@ -55,7 +55,7 @@ namespace efanna2e {
             nn_new.reserve(other.nn_new.capacity());
         }
 
-        void init(unsigned l, unsigned s) {
+        void init(unsigned l, unsigned s, unsigned r) {
             M = s;
         }
 

@@ -34,18 +34,16 @@ namespace efanna2e {
         delete[] pool;
     }
 
-    void IndexGraph::heap_insert(const size_t n, unsigned id,
-                                 float dist,
-                                 std::mutex &m) {
+    inline void
+    IndexGraph::heap_insert(faiss::HeapArray<faiss::CMax<float, std::pair<unsigned, bool>>> &pool_, unsigned id,
+                            float dist) const {
 
-        faiss::HeapArray<faiss::CMax<float, std::pair<unsigned, bool>>> &pool_ = pool[n];
         for (int i = 100; i < pool_.nh; i++) {
             if (pool_.ids[i].first == id) return;
         }
         for (int i = 0; i < pool_.k; i++) {
             if (pool_.ids[i].first == id) return;
         }
-        LockGuard guard(m);
         if (pool_.k < pool_capacity) {
             pool_.k += 1;
             faiss::heap_push<faiss::CMax<float, std::pair<unsigned, bool>>>(pool_.k, pool_.val, pool_.ids, dist,
@@ -65,20 +63,21 @@ namespace efanna2e {
                 if (i != j) {
                     float dist = distance_->compare(data_ + i * dimension_, data_ + j * dimension_, dimension_);
                     if (dist <= pool[i].val[0]) {
-                        heap_insert(i, j, dist, graph_[i].lock);
+                        heap_insert(pool[i], j, dist);
                     }
                     if (dist <= pool[j].val[0]) {
-                        heap_insert(j, i, dist, graph_[j].lock);
+                        heap_insert(pool[j], i, dist);
                     }
                 }
             });
         }
     }
 
-    void IndexGraph::update(const Parameters &parameters) {
+    void IndexGraph::update(const Parameters &parameters, int flag) {
         unsigned S = parameters.Get<unsigned>("S");
         unsigned R = parameters.Get<unsigned>("R");
         unsigned L = parameters.Get<unsigned>("L");
+        //if (flag == 1) S = 100;
         // Step 1.
         // Clear all nn_new and nn_old
 #pragma omp parallel for
@@ -193,6 +192,10 @@ namespace efanna2e {
 
                 faiss::heap_heapify<faiss::CMax<float, std::pair<unsigned, bool>>>(pool[n].k, pool[n].val, pool[n].ids,
                                                                                    pool[n].val, pool[n].ids, pool[n].k);
+//                faiss::heap_reorder<faiss::CMax<float, std::pair<unsigned, bool>>>
+//                        (pool[n].k, pool[n].val, pool[n].ids);
+//                std::reverse(pool[n].val, pool[n].val + pool[n].k);
+//                std::reverse(pool[n].ids, pool[n].ids + pool[n].k);
             }
         }
 
@@ -212,10 +215,10 @@ namespace efanna2e {
                 nn_new.insert(nn_new.end(), rnn_new.begin(), rnn_new.end());
 
                 nn_old.insert(nn_old.end(), rnn_old.begin(), rnn_old.end());
-                if (nn_old.size() > R) {
+                if (nn_old.size() > R * 2) {
                     std::shuffle(nn_old.begin(), nn_old.end(), rng);
-                    nn_old.resize(R);
-                    nn_old.reserve(R);
+                    nn_old.resize(R * 2);
+                    nn_old.reserve(R * 2);
                 }
                 std::vector<unsigned>().swap(graph_[i].rnn_new);
                 std::vector<unsigned>().swap(graph_[i].rnn_old);
@@ -242,7 +245,7 @@ namespace efanna2e {
             std::cout << "iter: " << it;
             auto s = std::chrono::high_resolution_clock::now();
 
-            update(parameters);
+            update(parameters, (it == 10) ? 1 : 0);
 
             auto e = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> diff = e - s;
@@ -257,7 +260,7 @@ namespace efanna2e {
             diff = e - s;
             std::cout << "join: " << diff.count() << " ";
             tot_time += diff.count();
-            std::cout << "Total time: " << tot_time << " ";
+            std::cout << "Total time: " << tot_time << "\n";
             eval_recall(control_points, acc_eval_set);
 
         }
@@ -314,11 +317,12 @@ namespace efanna2e {
 
         const unsigned L = parameters.Get<unsigned>("L");
         const unsigned S = parameters.Get<unsigned>("S");
+        const unsigned R = parameters.Get<unsigned>("R");
         graph_.reserve(nd_);
         graph_.resize(nd_);
 #pragma omp parallel for
         for (unsigned i = 0; i < nd_; i++) {
-            graph_[i].init(L, S);
+            graph_[i].init(L, S, R);
             auto &ids = final_graph_[i];
             //std::sort(ids.begin(), ids.end());
 
